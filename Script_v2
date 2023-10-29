@@ -1,0 +1,133 @@
+-- Creación de la tabla VIVERO
+CREATE TABLE VIVERO (
+    Nombre VARCHAR(255) PRIMARY KEY,
+    Latitud DECIMAL(11, 8) CHECK (Latitud >= -90 AND Latitud <= 90),
+    Longitud DECIMAL(11, 8) CHECK (Longitud >= -180 AND Longitud <= 180),
+    Stock INT
+);
+
+INSERT INTO VIVERO (Nombre, Latitud, Longitud, Stock)
+VALUES
+('Vivero1', 40.7128, -74.0060, 100),
+('Vivero2', 34.0522, -118.2437, 50),
+('Vivero3', 41.8781, -87.6298, 75),
+('Vivero4', 51.5074, -0.1278, 60),
+('Vivero5', 35.6895, 139.6917, 90);
+
+
+-- Creación de la tabla ZONA
+CREATE TABLE ZONA (
+    Nombre_vivero VARCHAR(255) REFERENCES VIVERO(Nombre) ON DELETE CASCADE,
+    Código INT UNIQUE,
+    Tipo VARCHAR(255),
+    Latitud DECIMAL(11, 8) CHECK (Latitud >= -90 AND Latitud <= 90),
+    Longitud DECIMAL(11, 8) CHECK (Longitud >= -180 AND Longitud <= 180),
+    Productividad INT,
+    PRIMARY KEY (Nombre_vivero, Código)
+);
+
+INSERT INTO ZONA (Nombre_vivero, Código, Tipo, Latitud, Longitud, Productividad)
+VALUES
+('Vivero1', 1, 'Exterior', 40.7128, -74.0060, 10),
+('Vivero1', 2, 'Interior', 40.7128, -74.0060, 20),
+('Vivero2', 3, 'Exterior', 34.0522, -118.2437, 15),
+('Vivero3', 4, 'Exterior', 41.8781, -87.6298, 12),
+('Vivero4', 5, 'Exterior', 51.5074, -0.1278, 18);
+
+
+-- Creación de la tabla EMPLEADO
+CREATE TABLE EMPLEADO (
+    DNI VARCHAR(9) PRIMARY KEY,
+    Puesto_de_trabajo VARCHAR(255),
+    Productividad INT CHECK (Productividad >= 0),
+    Nombre_vivero VARCHAR(255) REFERENCES VIVERO(Nombre) ON DELETE CASCADE,
+    Código_zona INT REFERENCES ZONA(Código) ON DELETE CASCADE,
+    Época VARCHAR(255) CHECK (Época IN ('Primavera', 'Verano', 'Otoño', 'Invierno'))
+);
+
+INSERT INTO EMPLEADO (DNI, Puesto_de_trabajo, Productividad, Nombre_vivero, Código_zona, Época)
+VALUES
+('12345678A', 'Jardinero', 8, 'Vivero1', 1, 'Verano'),
+('23456789B', 'Supervisor', 10, 'Vivero2', 3, 'Verano'),
+('34567890C', 'Jardinero', 7, 'Vivero3', 4, 'Invierno'),
+('45678901D', 'Supervisor', 9, 'Vivero4', 5, 'Primavera'),
+('56789012E', 'Jardinero', 6, 'Vivero1', 2, 'Otoño');
+
+
+-- Creación de la tabla PUESTO_DE_TRABAJO
+CREATE TABLE PUESTO_DE_TRABAJO (
+    DNI_empleado VARCHAR(9) REFERENCES EMPLEADO(DNI) ON DELETE CASCADE,
+    Puesto VARCHAR(255)
+);
+
+INSERT INTO PUESTO_DE_TRABAJO (DNI_empleado, Puesto)
+VALUES
+('12345678A', 'Jardinero'),
+('12345678A', 'Supervisor'),
+('34567890C', 'Jardinero'),
+('45678901D', 'Supervisor'),
+('56789012E', 'Jardinero');
+
+
+-- Creación de la tabla PRODUCTO
+CREATE TABLE PRODUCTO (
+    Código INT PRIMARY KEY,
+    Código_zona INT REFERENCES ZONA(Código) ON DELETE CASCADE,
+    Cantidad INT CHECK (Cantidad >= 0)
+);
+
+INSERT INTO PRODUCTO (Código, Código_zona, Cantidad)
+VALUES
+(1, 1, 23),
+(2, 1, 63),
+(3, 2, 76),
+(4, 3, 354),
+(5, 4, 672);
+
+
+-- Creación de la tabla CLIENTE_PLUS
+CREATE TABLE CLIENTE_PLUS (
+    DNI VARCHAR(9) PRIMARY KEY,
+    Bonificaciones DECIMAL(10, 2) GENERATED ALWAYS AS (Compras_mensuales / 2.54) STORED,
+    Compras_mensuales INT CHECK (Compras_mensuales >= 0)
+);
+
+INSERT INTO CLIENTE_PLUS (DNI, Compras_mensuales)
+VALUES
+('DNI1111', 500),
+('DNI2222', 300),
+('DNI3333', 150),
+('DNI4444', 700),
+('DNI5555', 1000);
+
+
+-- Creación de la tabla CLIENTE_NORMAL
+CREATE TABLE CLIENTE_NORMAL (
+    DNI VARCHAR(9) PRIMARY KEY
+);
+
+INSERT INTO CLIENTE_NORMAL (DNI)
+VALUES
+('DNI6666'),
+('DNI7777'),
+('DNI8888'),
+('DNI9999'),
+('DNI0000');
+
+
+-- Creación de la tabla PEDIDO
+CREATE TABLE PEDIDO (
+    DNI_cliente_plus VARCHAR(9) REFERENCES CLIENTE_PLUS(DNI) ON DELETE CASCADE,
+    Código INT,
+    DNI_empleado VARCHAR(9) REFERENCES EMPLEADO(DNI) ON DELETE CASCADE,
+    DNI_cliente_normal VARCHAR(9) REFERENCES CLIENTE_NORMAL(DNI) ON DELETE CASCADE,
+    PRIMARY KEY (DNI_cliente_plus, Código)
+);
+
+INSERT INTO PEDIDO (DNI_cliente_plus, Código, DNI_empleado, DNI_cliente_normal)
+VALUES
+('DNI1111', 1, '12345678A', 'DNI6666'),
+('DNI2222', 2, '23456789B', 'DNI7777'),
+('DNI3333', 3, '34567890C', 'DNI8888'),
+('DNI4444', 4, '45678901D', 'DNI9999'),
+('DNI5555', 5, '56789012E', 'DNI0000');
